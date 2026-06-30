@@ -2408,12 +2408,12 @@ a { color: var(--primary); text-decoration: none; }
 }
 .weekly-report-content h2 {
   font-size: 1.4rem;
-  color: #ffffff;
+  color: var(--text-primary);
   margin-bottom: 12px;
 }
 .weekly-report-content h3 {
   font-size: 1.1rem;
-  color: #ffffff;
+  color: var(--text-primary);
   margin: 18px 0 8px 0;
 }
 .weekly-report-content hr {
