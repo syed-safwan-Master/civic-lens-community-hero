@@ -113,7 +113,6 @@ a { color: var(--primary); text-decoration: none; }
 }
 
 .logo-icon {
-  font-size: 80px;
   width: 145px;
   height: 145px;
   display: flex;
@@ -126,6 +125,14 @@ a { color: var(--primary); text-decoration: none; }
   backdrop-filter: blur(8px);
   animation: logo-float 3s ease-in-out infinite, pulse-glow 3s ease-in-out infinite;
   margin-bottom: 12px;
+  overflow: hidden;
+}
+
+.logo-icon img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  border-radius: 50%;
 }
 
 .loading-title {
@@ -226,7 +233,20 @@ a { color: var(--primary); text-decoration: none; }
   gap: 10px;
 }
 
-.brand-icon { font-size: 1.5rem; }
+.brand-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.brand-icon img {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  object-fit: cover;
+  display: block;
+}
 
 .brand-name {
   font-size: 1.1rem;
