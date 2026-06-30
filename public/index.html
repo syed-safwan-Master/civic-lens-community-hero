@@ -1,0 +1,610 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Civic Lens – Community Hero | Report & Track Local Issues</title>
+  <meta name="description" content="Civic Lens empowers citizens of Bengaluru to report, track, and resolve hyperlocal civic issues with AI-powered analysis and community verification." />
+  <meta name="theme-color" content="#0F172A" />
+
+  <!-- Google Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet" />
+
+  <!-- Chart.js -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+
+  <!-- Google Maps MarkerClusterer -->
+  <script src="https://unpkg.com/@googlemaps/markerclusterer/dist/index.min.js"></script>
+
+  <!-- Styles -->
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <!-- ====================================================== -->
+  <!-- LOADING SCREEN -->
+  <!-- ====================================================== -->
+  <div id="loading-screen" class="loading-screen">
+    <div class="loading-content">
+      <div class="loading-logo">
+        <div class="logo-icon">🏙️</div>
+        <h1 class="loading-title">Civic Lens</h1>
+        <p class="loading-sub">Community Hero</p>
+      </div>
+      <div class="loading-bar-container">
+        <div class="loading-bar" id="loading-bar"></div>
+      </div>
+      <p class="loading-status" id="loading-status">Initializing...</p>
+    </div>
+  </div>
+
+  <!-- ====================================================== -->
+  <!-- MAIN APP -->
+  <!-- ====================================================== -->
+  <div id="app" class="app hidden">
+
+    <!-- TOP HEADER -->
+    <header class="app-header">
+      <div class="header-left">
+        <button class="sidebar-toggle" id="sidebar-toggle" aria-label="Toggle sidebar">
+          <span></span><span></span><span></span>
+        </button>
+        <div class="header-brand">
+          <span class="brand-icon">🏙️</span>
+          <div>
+            <span class="brand-name">Civic Lens</span>
+            <span class="brand-sub">Community Hero</span>
+          </div>
+        </div>
+      </div>
+      <div class="header-center">
+        <div class="location-pill" id="location-pill">
+          <span class="location-icon">📍</span>
+          <span id="location-text">Bengaluru, KA</span>
+        </div>
+      </div>
+      <div class="header-right">
+        <!-- Language Toggle -->
+        <div class="lang-toggle" id="lang-toggle" title="Change language">
+          <button class="lang-btn active" data-lang="en">EN</button>
+          <button class="lang-btn" data-lang="kn">ಕ</button>
+          <button class="lang-btn" data-lang="hi">हि</button>
+        </div>
+        <button class="icon-btn notification-btn" id="notification-btn" aria-label="Notifications" title="Notifications">
+          🔔
+          <span class="notif-badge" id="notif-badge">3</span>
+        </button>
+        <button class="user-avatar-btn" id="user-avatar-btn" aria-label="User profile">
+          <div class="avatar" id="user-avatar">
+            <span id="avatar-icon">👤</span>
+          </div>
+          <div class="avatar-badge hidden" id="avatar-badge"></div>
+        </button>
+      </div>
+    </header>
+
+    <!-- MAIN CONTENT AREA -->
+    <div class="main-layout">
+
+      <!-- SIDEBAR (desktop) -->
+      <nav class="sidebar" id="sidebar">
+        <div class="sidebar-inner">
+          <ul class="nav-list">
+            <li>
+              <button class="nav-item active" data-view="map" id="nav-map">
+                <span class="nav-icon">🗺️</span>
+                <span class="nav-label">Map View</span>
+              </button>
+            </li>
+            <li>
+              <button class="nav-item" data-view="feed" id="nav-feed">
+                <span class="nav-icon">📋</span>
+                <span class="nav-label">Issue Feed</span>
+                <span class="nav-badge" id="feed-badge">8</span>
+              </button>
+            </li>
+            <li>
+              <button class="nav-item report-btn-nav" data-view="report" id="nav-report">
+                <span class="nav-icon">➕</span>
+                <span class="nav-label">Report Issue</span>
+              </button>
+            </li>
+            <li>
+              <button class="nav-item" data-view="dashboard" id="nav-dashboard">
+                <span class="nav-icon">📊</span>
+                <span class="nav-label">Dashboard</span>
+              </button>
+            </li>
+            <li>
+              <button class="nav-item" data-view="profile" id="nav-profile">
+                <span class="nav-icon">🏆</span>
+                <span class="nav-label">My Profile</span>
+              </button>
+            </li>
+          </ul>
+          <div class="sidebar-footer">
+            <div class="firebase-status" id="firebase-status">
+              <span class="status-dot offline"></span>
+              <span>Local Mode</span>
+            </div>
+          </div>
+        </div>
+      </nav>
+
+      <!-- VIEWS CONTAINER -->
+      <main class="views-container" id="views-container">
+
+        <!-- ===================== MAP VIEW ===================== -->
+        <section class="view active" id="view-map">
+          <div class="map-controls">
+            <div class="map-filters">
+              <button class="filter-chip active" data-filter="all">All</button>
+              <button class="filter-chip" data-filter="open">Open</button>
+              <button class="filter-chip" data-filter="in-progress">In Progress</button>
+              <button class="filter-chip" data-filter="resolved">Resolved</button>
+            </div>
+            <div class="map-search-bar" id="map-search-bar-wrap">
+              <span class="map-search-icon">🔍</span>
+              <input type="text" class="map-search-input" id="map-search-input" placeholder="Search location..." />
+            </div>
+            <button class="btn btn-primary btn-sm" id="report-here-btn">
+              <span>➕</span> Report Issue
+            </button>
+          </div>
+          <div id="map-container" class="map-container">
+            <div class="map-loading" id="map-loading">
+              <div class="spinner"></div>
+              <p>Loading map...</p>
+            </div>
+            <!-- Google Maps injects here -->
+            <div id="google-map" style="width:100%;height:100%;"></div>
+          </div>
+          <div class="map-legend">
+            <span class="legend-item"><span class="legend-dot" style="background:#10B981"></span>Low</span>
+            <span class="legend-item"><span class="legend-dot" style="background:#F59E0B"></span>Medium</span>
+            <span class="legend-item"><span class="legend-dot" style="background:#F97316"></span>High</span>
+            <span class="legend-item"><span class="legend-dot" style="background:#EF4444"></span>Critical</span>
+            <span class="legend-item"><span class="legend-dot" style="background:#FFD700;border:1px solid #FFD700"></span>Verified</span>
+          </div>
+        </section>
+
+        <!-- ===================== FEED VIEW ===================== -->
+        <section class="view" id="view-feed">
+          <div class="feed-header">
+            <h2 class="view-title">Issue Feed</h2>
+            <div class="feed-controls">
+              <div class="filter-row">
+                <select class="filter-select" id="filter-category">
+                  <option value="all">All Categories</option>
+                  <option value="pothole">🕳️ Pothole</option>
+                  <option value="waterLeakage">💧 Water Leakage</option>
+                  <option value="streetlight">💡 Streetlight</option>
+                  <option value="waste">🗑️ Waste</option>
+                  <option value="flooding">🌊 Flooding</option>
+                  <option value="other">📦 Other</option>
+                </select>
+                <select class="filter-select" id="filter-status">
+                  <option value="all">All Status</option>
+                  <option value="open">Open</option>
+                  <option value="in-progress">In Progress</option>
+                  <option value="resolved">Resolved</option>
+                </select>
+                <select class="filter-select" id="sort-by">
+                  <option value="newest">Newest First</option>
+                  <option value="upvotes">Most Upvoted</option>
+                  <option value="severity">Most Severe</option>
+                </select>
+              </div>
+            </div>
+          </div>
+          <div class="issues-grid" id="issues-grid">
+            <div class="loading-cards">
+              <div class="card-skeleton"></div>
+              <div class="card-skeleton"></div>
+              <div class="card-skeleton"></div>
+            </div>
+          </div>
+        </section>
+
+        <!-- ===================== REPORT VIEW ===================== -->
+        <section class="view" id="view-report">
+          <div class="report-container">
+            <div class="report-header">
+              <h2 class="view-title">Report an Issue</h2>
+              <p class="view-subtitle">Help improve your community by reporting civic issues</p>
+            </div>
+
+            <!-- AI Analysis Banner -->
+            <div class="ai-banner" id="ai-banner">
+              <div class="ai-banner-icon">✨</div>
+              <div>
+                <strong>AI-Powered Analysis</strong>
+                <p>Upload a photo and Gemini AI will automatically detect the issue type and severity</p>
+              </div>
+            </div>
+
+            <form class="report-form" id="report-form">
+              <!-- Image Upload -->
+              <div class="form-section">
+                <label class="form-label">📷 Upload Photo / Video</label>
+                <div class="image-upload-area" id="image-upload-area">
+                  <input type="file" id="image-input" accept="image/*,video/*" class="hidden" />
+                  <div class="upload-placeholder" id="upload-placeholder">
+                    <div class="upload-icon">📸</div>
+                    <p class="upload-text">Tap to upload or drag & drop</p>
+                    <p class="upload-hint">Supports JPG, PNG, WebP, MP4</p>
+                  </div>
+                  <div class="image-preview hidden" id="image-preview">
+                    <img id="preview-img" src="" alt="Issue preview" />
+                    <button type="button" class="remove-image-btn" id="remove-image-btn">✕</button>
+                    <div class="analyzing-overlay hidden" id="analyzing-overlay">
+                      <div class="spinner-sm"></div>
+                      <span>AI Analyzing...</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <!-- AI Results Banner -->
+              <div class="ai-result-card hidden" id="ai-result-card">
+                <div class="ai-result-header">
+                  <span>✨</span> AI detected the following issue:
+                </div>
+                <div class="ai-result-body" id="ai-result-body"></div>
+              </div>
+
+              <!-- Duplicate Warning -->
+              <div class="duplicate-warning hidden" id="duplicate-warning">
+                <div class="duplicate-warning-icon">⚠️</div>
+                <div class="duplicate-warning-body">
+                  <strong>Possible Duplicate Detected</strong>
+                  <p id="duplicate-reason">A similar issue may already be reported nearby.</p>
+                  <div class="duplicate-actions">
+                    <button class="btn btn-sm btn-secondary" id="view-duplicate-btn">View Existing Issue</button>
+                    <button class="btn btn-sm btn-primary" id="dismiss-duplicate-btn">Submit Anyway</button>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Issue Details -->
+              <div class="form-section">
+                <label class="form-label" for="issue-title">📝 Issue Title *</label>
+                <input type="text" id="issue-title" class="form-input" placeholder="e.g., Large pothole on 80ft Road" maxlength="80" required />
+              </div>
+
+              <div class="form-row">
+                <div class="form-section">
+                  <label class="form-label" for="issue-category">🏷️ Category *</label>
+                  <select id="issue-category" class="form-input" required>
+                    <option value="">Select category</option>
+                    <option value="pothole">🕳️ Pothole</option>
+                    <option value="waterLeakage">💧 Water Leakage</option>
+                    <option value="streetlight">💡 Streetlight</option>
+                    <option value="waste">🗑️ Waste Management</option>
+                    <option value="flooding">🌊 Flooding</option>
+                    <option value="other">📦 Other</option>
+                  </select>
+                </div>
+                <div class="form-section">
+                  <label class="form-label">🔥 Severity *</label>
+                  <div class="severity-picker" id="severity-picker">
+                    <button type="button" class="sev-btn" data-value="1" title="Minor">1</button>
+                    <button type="button" class="sev-btn" data-value="2" title="Low">2</button>
+                    <button type="button" class="sev-btn" data-value="3" title="Moderate">3</button>
+                    <button type="button" class="sev-btn" data-value="4" title="High">4</button>
+                    <button type="button" class="sev-btn" data-value="5" title="Critical 🔥">5</button>
+                  </div>
+                  <input type="hidden" id="issue-severity" value="" />
+                </div>
+              </div>
+
+              <div class="form-section">
+                <label class="form-label" for="issue-description">📄 Description</label>
+                <textarea id="issue-description" class="form-input form-textarea" placeholder="Describe the issue, how long it's been there, and its impact on the community..." rows="4"></textarea>
+              </div>
+
+              <!-- Location -->
+              <div class="form-section">
+                <label class="form-label">📍 Location *</label>
+                <div class="location-row">
+                  <input type="text" id="issue-address" class="form-input" placeholder="Address or landmark" />
+                  <button type="button" class="btn btn-secondary" id="get-location-btn">
+                    📍 Use GPS
+                  </button>
+                </div>
+                <div class="location-coords hidden" id="location-coords">
+                  <span class="coords-text" id="coords-text"></span>
+                </div>
+              </div>
+
+              <!-- Submit -->
+              <div class="form-actions">
+                <button type="button" class="btn btn-secondary" id="reset-form-btn">Reset</button>
+                <button type="submit" class="btn btn-primary btn-lg" id="submit-issue-btn">
+                  <span id="submit-text">Submit Issue</span>
+                  <div class="spinner-sm hidden" id="submit-spinner"></div>
+                </button>
+              </div>
+            </form>
+          </div>
+        </section>
+
+        <!-- ===================== DASHBOARD VIEW ===================== -->
+        <section class="view" id="view-dashboard">
+          <div class="dashboard-container">
+            <h2 class="view-title">Impact Dashboard</h2>
+            <p class="view-subtitle">Real-time civic health of your community</p>
+
+            <!-- Stats Grid -->
+            <div class="stats-grid" id="stats-grid">
+              <div class="stat-card" id="stat-total">
+                <div class="stat-icon">📋</div>
+                <div class="stat-value" id="stat-total-val">—</div>
+                <div class="stat-label">Total Issues</div>
+                <div class="stat-trend">+3 this week</div>
+              </div>
+              <div class="stat-card resolved" id="stat-resolved">
+                <div class="stat-icon">✅</div>
+                <div class="stat-value" id="stat-resolved-val">—</div>
+                <div class="stat-label">Resolved This Month</div>
+                <div class="stat-trend success">↑ 28% improvement</div>
+              </div>
+              <div class="stat-card active" id="stat-active">
+                <div class="stat-icon">🔴</div>
+                <div class="stat-value" id="stat-active-val">—</div>
+                <div class="stat-label">Active Reports</div>
+                <div class="stat-trend warning">Needs attention</div>
+              </div>
+              <div class="stat-card time" id="stat-time">
+                <div class="stat-icon">⏱️</div>
+                <div class="stat-value" id="stat-time-val">—<span class="stat-unit">days</span></div>
+                <div class="stat-label">Avg. Resolution Time</div>
+                <div class="stat-trend">City avg: 8.3 days</div>
+              </div>
+            </div>
+
+            <!-- Charts Row -->
+            <div class="charts-row">
+              <div class="chart-card">
+                <h3 class="chart-title">Issues by Category</h3>
+                <div class="chart-wrapper">
+                  <canvas id="category-chart"></canvas>
+                </div>
+              </div>
+              <div class="chart-card">
+                <h3 class="chart-title">Severity Overview</h3>
+                <div class="severity-heatmap" id="severity-heatmap"></div>
+              </div>
+            </div>
+
+            <!-- Leaderboard -->
+            <div class="leaderboard-card">
+              <h3 class="chart-title">🏆 Top Civic Heroes</h3>
+              <p class="chart-subtitle">Citizens making the biggest impact this month</p>
+              <div class="leaderboard-list" id="leaderboard-list">
+                <div class="loading-placeholder">Loading leaderboard...</div>
+              </div>
+            </div>
+
+            <!-- Weekly Report -->
+            <div class="weekly-report-card">
+              <div class="weekly-report-header">
+                <div>
+                  <h3 class="chart-title">📄 AI Weekly City Report</h3>
+                  <p class="chart-subtitle">Gemini-generated municipal health report for BBMP</p>
+                </div>
+                <div class="weekly-report-lang">
+                  <select id="report-lang-select" class="filter-select" style="width:auto;font-size:0.78rem">
+                    <option value="en">English</option>
+                    <option value="kn">ಕನ್ನಡ</option>
+                    <option value="hi">हिंदी</option>
+                  </select>
+                  <button class="btn btn-primary btn-sm" id="generate-report-btn">
+                    <span id="report-btn-text">⚡ Generate Report</span>
+                    <div class="spinner-sm hidden" id="report-spinner"></div>
+                  </button>
+                </div>
+              </div>
+              <div class="weekly-report-preview hidden" id="weekly-report-preview">
+                <div class="weekly-report-content" id="weekly-report-content"></div>
+                <div class="weekly-report-actions">
+                  <button class="btn btn-secondary btn-sm" onclick="window.print()">🖨️ Print / Save PDF</button>
+                  <button class="btn btn-secondary btn-sm" id="copy-report-btn">📋 Copy Text</button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- ===================== PROFILE VIEW ===================== -->
+        <section class="view" id="view-profile">
+          <div class="profile-container">
+            <div class="profile-hero">
+              <div class="profile-avatar-large" id="profile-avatar-large">👤</div>
+              <div class="profile-info">
+                <h2 class="profile-name" id="profile-name">Guest User</h2>
+                <p class="profile-email" id="profile-email">Sign in to track your contributions</p>
+                <div class="profile-points">
+                  <span class="points-value" id="profile-points">0</span>
+                  <span class="points-label">Civic Points</span>
+                </div>
+              </div>
+            </div>
+
+            <!-- Auth Buttons -->
+            <div class="auth-section" id="auth-section">
+              <button class="btn btn-primary btn-full" id="google-signin-btn">
+                <img src="https://www.google.com/favicon.ico" alt="Google" width="18" height="18" style="border-radius:2px" />
+                Sign in with Google
+              </button>
+            </div>
+
+            <!-- Badges -->
+            <div class="badges-section">
+              <h3 class="section-title">🏅 Your Badges</h3>
+              <div class="badges-grid" id="badges-grid">
+                <div class="badge-item locked" data-badge="first-reporter">
+                  <div class="badge-icon">🌱</div>
+                  <div class="badge-name">First Reporter</div>
+                  <div class="badge-req">Report 1 issue</div>
+                </div>
+                <div class="badge-item locked" data-badge="civic-champion">
+                  <div class="badge-icon">🏆</div>
+                  <div class="badge-name">Civic Champion</div>
+                  <div class="badge-req">Report 10 issues</div>
+                </div>
+                <div class="badge-item locked" data-badge="verified-hero">
+                  <div class="badge-icon">⭐</div>
+                  <div class="badge-name">Verified Hero</div>
+                  <div class="badge-req">5 upvoted reports</div>
+                </div>
+                <div class="badge-item locked" data-badge="community-voice">
+                  <div class="badge-icon">📢</div>
+                  <div class="badge-name">Community Voice</div>
+                  <div class="badge-req">25 upvotes given</div>
+                </div>
+                <div class="badge-item locked" data-badge="change-maker">
+                  <div class="badge-icon">🔥</div>
+                  <div class="badge-name">Change Maker</div>
+                  <div class="badge-req">3 issues resolved</div>
+                </div>
+                <div class="badge-item locked" data-badge="city-guardian">
+                  <div class="badge-icon">🛡️</div>
+                  <div class="badge-name">City Guardian</div>
+                  <div class="badge-req">500 civic points</div>
+                </div>
+              </div>
+            </div>
+
+            <!-- My Reports -->
+            <div class="my-reports-section">
+              <h3 class="section-title">📋 My Reports</h3>
+              <div class="my-reports-list" id="my-reports-list">
+                <p class="empty-state">Sign in to see your reports</p>
+              </div>
+            </div>
+          </div>
+        </section>
+
+      </main>
+    </div>
+
+    <!-- BOTTOM NAV (mobile) -->
+    <nav class="bottom-nav" id="bottom-nav">
+      <button class="bottom-nav-item active" data-view="map">
+        <span class="bnav-icon">🗺️</span>
+        <span class="bnav-label">Map</span>
+      </button>
+      <button class="bottom-nav-item" data-view="feed">
+        <span class="bnav-icon">📋</span>
+        <span class="bnav-label">Feed</span>
+      </button>
+      <button class="bottom-nav-item report-center-btn" data-view="report">
+        <span class="bnav-icon report-icon-wrap">➕</span>
+        <span class="bnav-label">Report</span>
+      </button>
+      <button class="bottom-nav-item" data-view="dashboard">
+        <span class="bnav-icon">📊</span>
+        <span class="bnav-label">Stats</span>
+      </button>
+      <button class="bottom-nav-item" data-view="profile">
+        <span class="bnav-icon">👤</span>
+        <span class="bnav-label">Profile</span>
+      </button>
+    </nav>
+
+  </div>
+
+  <!-- ====================================================== -->
+  <!-- ISSUE DETAIL MODAL -->
+  <!-- ====================================================== -->
+  <div class="modal-overlay hidden" id="issue-modal">
+    <div class="modal-card" id="issue-modal-card">
+      <button class="modal-close" id="modal-close">✕</button>
+      <div class="modal-content" id="modal-content">
+        <!-- Dynamic content -->
+      </div>
+    </div>
+  </div>
+
+  <!-- ====================================================== -->
+  <!-- AI CHAT PANEL -->
+  <!-- ====================================================== -->
+  <button class="chat-fab" id="chat-fab" aria-label="Open AI Assistant">
+    <span class="chat-fab-icon">🤖</span>
+    <span class="chat-fab-label">AI Help</span>
+  </button>
+
+  <div class="chat-panel hidden" id="chat-panel">
+    <div class="chat-header">
+      <div class="chat-header-info">
+        <div class="chat-avatar">🤖</div>
+        <div>
+          <h3>CivicPulse AI</h3>
+          <span class="chat-status">Powered by Gemini</span>
+        </div>
+      </div>
+      <button class="chat-close-btn" id="chat-close">✕</button>
+    </div>
+
+    <div class="chat-messages" id="chat-messages">
+      <div class="chat-message ai">
+        <div class="message-bubble">
+          Namaskara! 🙏 I'm CivicPulse AI. I can help you report issues, understand the resolution process, or draft formal complaints. How can I assist you today?
+        </div>
+      </div>
+    </div>
+
+    <div class="chat-quick-prompts" id="chat-quick-prompts">
+      <button class="quick-prompt" data-prompt="What are the most urgent issues near Koramangala right now?">📍 Nearby urgent issues</button>
+      <button class="quick-prompt" data-prompt="How do I escalate a pothole issue to BBMP?">🕳️ Escalate pothole issue</button>
+      <button class="quick-prompt" data-prompt="What is the resolution process for civic issues in Bengaluru?">⚙️ Resolution process</button>
+      <button class="quick-prompt" data-prompt="Help me draft a formal complaint letter">📝 Draft complaint</button>
+    </div>
+
+    <div class="chat-input-row">
+      <input type="text" class="chat-input" id="chat-input" placeholder="Ask me anything about civic issues..." />
+      <button class="chat-send-btn" id="chat-send">
+        <span>➤</span>
+      </button>
+    </div>
+  </div>
+
+  <!-- ====================================================== -->
+  <!-- TOAST NOTIFICATIONS -->
+  <!-- ====================================================== -->
+  <div class="toast-container" id="toast-container"></div>
+
+  <!-- ====================================================== -->
+  <!-- SUCCESS OVERLAY (after report submission) -->
+  <!-- ====================================================== -->
+  <div class="success-overlay hidden" id="success-overlay">
+    <div class="success-card">
+      <div class="success-animation">
+        <div class="success-circle">✅</div>
+      </div>
+      <h2>Issue Reported!</h2>
+      <p>Thank you for making Bengaluru better. Your report has been submitted and will be reviewed by our community.</p>
+      <div class="success-points">+10 Civic Points Earned 🎉</div>
+      <div class="success-actions">
+        <button class="btn btn-secondary" id="view-feed-after">View Feed</button>
+        <button class="btn btn-primary" id="report-another">Report Another</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Google Maps API (loaded dynamically after config fetch) -->
+  <script>
+    window.__mapsLoaded = false;
+    window.__mapsCallback = null;
+    function initGoogleMaps() {
+      window.__mapsLoaded = true;
+      if (window.__mapsCallback) window.__mapsCallback();
+    }
+  </script>
+
+  <!-- Firebase SDK (modular via CDN) -->
+  <script type="module" src="app.js"></script>
+</body>
+</html>
