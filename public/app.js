@@ -1475,6 +1475,18 @@ document.getElementById('sort-by')?.addEventListener('change', renderFeed);
 // DASHBOARD
 // ============================================================
 async function loadDashboard() {
+  if (STATE.firestore) {
+    const localStats = computeLocalStats();
+    animateCounter(document.getElementById('stat-total-val'), 0, localStats.total, 600);
+    animateCounter(document.getElementById('stat-resolved-val'), 0, localStats.resolved, 600);
+    animateCounter(document.getElementById('stat-active-val'), 0, localStats.active, 600);
+    document.getElementById('stat-time-val').innerHTML = `3.5<span class="stat-unit">days</span>`;
+    renderCategoryChart(localStats.categoryCount);
+    renderSeverityHeatmap();
+    renderLeaderboard(localStats.leaderboard);
+    return;
+  }
+
   try {
     const res = await fetch('/api/stats');
     const data = await res.json();
@@ -1514,19 +1526,51 @@ function computeLocalStats() {
   const total = STATE.issues.length;
   const resolved = STATE.issues.filter(i => i.status === 'resolved' && new Date(i.timestamp) >= monthStart).length;
   const active = STATE.issues.filter(i => i.status !== 'resolved').length;
+
   const categoryCount = {};
-  STATE.issues.forEach(i => { categoryCount[i.category] = (categoryCount[i.category] || 0) + 1; });
+  STATE.issues.forEach(i => {
+    categoryCount[i.category] = (categoryCount[i.category] || 0) + 1;
+  });
 
   const userStats = {};
+
+  if (STATE.currentUser) {
+    const currentName = STATE.currentUser.displayName || STATE.currentUser.email || 'You';
+    userStats[STATE.currentUser.uid] = {
+      name: currentName,
+      issues: 0,
+      upvotes: 0,
+      points: STATE.points || 0,
+      isCurrentUser: true
+    };
+  }
+
   STATE.issues.forEach(i => {
-    if (!userStats[i.reportedBy]) {
-      userStats[i.reportedBy] = { name: i.reportedBy, issues: 0, upvotes: 0, points: 0 };
+    const key = i.reportedByUid || i.reportedBy || 'Anonymous';
+    if (!userStats[key]) {
+      userStats[key] = { name: i.reportedBy || 'Anonymous', issues: 0, upvotes: 0, points: 0 };
     }
-    userStats[i.reportedBy].issues++;
-    userStats[i.reportedBy].upvotes += i.upvotes || 0;
-    userStats[i.reportedBy].points += 10 + (i.upvotes || 0) * 2 + (i.status === 'resolved' ? 50 : 0);
+    userStats[key].issues++;
+    userStats[key].upvotes += i.upvotes || 0;
+    if (!userStats[key].isCurrentUser) {
+      userStats[key].points += 10 + (i.upvotes || 0) * 2 + (i.status === 'resolved' ? 50 : 0);
+    }
   });
-  const leaderboard = Object.values(userStats).sort((a, b) => b.points - a.points).slice(0, 5);
+
+  const allUsersSorted = Object.values(userStats).sort((a, b) => b.points - a.points);
+  const leaderboard = allUsersSorted.slice(0, 5);
+
+  if (STATE.currentUser) {
+    const currentUserIndex = allUsersSorted.findIndex(u => u.isCurrentUser || u.name === STATE.currentUser.displayName || u.name === STATE.currentUser.email);
+    if (currentUserIndex >= 5 && currentUserIndex !== -1) {
+      allUsersSorted[currentUserIndex].rank = currentUserIndex + 1;
+      STATE.currentUserLeaderboardStats = allUsersSorted[currentUserIndex];
+    } else {
+      STATE.currentUserLeaderboardStats = null;
+    }
+  } else {
+    STATE.currentUserLeaderboardStats = null;
+  }
 
   return { total, resolved, active, categoryCount, leaderboard };
 }
@@ -1624,17 +1668,39 @@ function renderLeaderboard(leaderboard) {
   const rankClass = (i) => i === 0 ? 'gold' : i === 1 ? 'silver' : i === 2 ? 'bronze' : '';
   const rankEmoji = (i) => i === 0 ? '🥇' : i === 1 ? '🥈' : i === 2 ? '🥉' : `#${i + 1}`;
 
-  list.innerHTML = leaderboard.map((user, i) => `
-    <div class="leaderboard-item">
-      <div class="leaderboard-rank ${rankClass(i)}">${rankEmoji(i)}</div>
-      <div class="leaderboard-avatar">${(user.name || 'U')[0].toUpperCase()}</div>
-      <div style="flex:1">
-        <div class="leaderboard-name">${escHtml(user.name || 'Unknown')}</div>
-        <div class="leaderboard-sub">${user.issues} reports · ${user.upvotes} upvotes</div>
+  let html = leaderboard.map((user, i) => {
+    const isSelf = user.isCurrentUser || (STATE.currentUser && (user.name === STATE.currentUser.displayName || user.name === STATE.currentUser.email));
+    return `
+      <div class="leaderboard-item${isSelf ? ' current-user-row' : ''}">
+        <div class="leaderboard-rank ${rankClass(i)}">${rankEmoji(i)}</div>
+        <div class="leaderboard-avatar">${(user.name || 'U')[0].toUpperCase()}</div>
+        <div style="flex:1">
+          <div class="leaderboard-name">${escHtml(user.name || 'Unknown')}${isSelf ? ' (You)' : ''}</div>
+          <div class="leaderboard-sub">${user.issues} reports · ${user.upvotes} upvotes</div>
+        </div>
+        <div class="leaderboard-points">${user.points} pts</div>
       </div>
-      <div class="leaderboard-points">${user.points} pts</div>
-    </div>
-  `).join('');
+    `;
+  }).join('');
+
+  if (STATE.currentUserLeaderboardStats) {
+    const user = STATE.currentUserLeaderboardStats;
+    html += `
+      <div class="leaderboard-separator">•••</div>
+      <div class="leaderboard-item current-user-row">
+        <div class="leaderboard-rank">#${user.rank}</div>
+        <div class="leaderboard-avatar" style="background:var(--primary);color:white">${(user.name || 'U')[0].toUpperCase()}</div>
+        <div style="flex:1">
+          <div class="leaderboard-name">${escHtml(user.name || 'Unknown')} (You)</div>
+          <div class="leaderboard-sub">${user.issues} reports · ${user.upvotes} upvotes</div>
+        </div>
+        <div class="leaderboard-points">${user.points} pts</div>
+      </div>
+    `;
+  }
+
+  list.innerHTML = html;
+}
 }
 
 // ============================================================
