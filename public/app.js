@@ -384,27 +384,58 @@ function updateUserUI(user) {
 
 async function handleGoogleSignIn() {
   if (!window.FB || !STATE.firebaseAuth) {
-    showToast('Authentication requires Firebase configuration', 'warning');
-    // Demo mode: create a guest user
-    STATE.currentUser = {
-      uid: 'guest_' + Date.now(),
-      displayName: 'Demo User',
-      email: 'demo@civiclens.in',
-      photoURL: null
-    };
-    updateUserUI(STATE.currentUser);
-    showToast('Signed in as Demo User', 'success');
+    // No Firebase at all – go straight to demo mode
+    signInAsDemo('Firebase not configured');
     return;
   }
 
   try {
     const provider = new window.FB.GoogleAuthProvider();
-    const result = await window.FB.signInWithPopup(STATE.firebaseAuth, provider);
-    showToast(`Welcome, ${result.user.displayName}! 🎉`, 'success');
+    provider.addScope('email');
+    provider.addScope('profile');
+
+    try {
+      // Try popup first (works on desktop)
+      const result = await window.FB.signInWithPopup(STATE.firebaseAuth, provider);
+      showToast(`Welcome, ${result.user.displayName}! 🎉`, 'success');
+    } catch (popupError) {
+      console.warn('Popup sign-in failed:', popupError.code, popupError.message);
+
+      if (popupError.code === 'auth/popup-blocked' ||
+          popupError.code === 'auth/popup-closed-by-user' ||
+          popupError.code === 'auth/cancelled-popup-request') {
+        showToast('Popup was blocked. Trying redirect...', 'info');
+        // Import and try redirect
+        const { signInWithRedirect, getRedirectResult } =
+          await import('https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js');
+        await signInWithRedirect(STATE.firebaseAuth, provider);
+      } else if (popupError.code === 'auth/unauthorized-domain') {
+        console.error(
+          `Firebase auth/unauthorized-domain: Add "${window.location.hostname}" ` +
+          `to Firebase Console → Authentication → Settings → Authorized domains`
+        );
+        signInAsDemo('Domain not authorized in Firebase');
+      } else {
+        // Any other error – fall back to demo
+        signInAsDemo(popupError.code || popupError.message);
+      }
+    }
   } catch (error) {
-    console.error('Sign-in failed:', error);
-    showToast('Sign-in failed. Please try again.', 'error');
+    console.error('Sign-in error:', error);
+    signInAsDemo(error.message);
   }
+}
+
+function signInAsDemo(reason) {
+  console.log('Falling back to Demo User because:', reason);
+  STATE.currentUser = {
+    uid: 'guest_' + Date.now(),
+    displayName: 'Demo User',
+    email: 'demo@civiclens.in',
+    photoURL: null
+  };
+  updateUserUI(STATE.currentUser);
+  showToast('Signed in as Demo User', 'success');
 }
 
 async function handleSignOut() {
