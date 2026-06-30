@@ -875,28 +875,28 @@ function initMap() {
 
   document.getElementById('map-loading')?.classList.add('hidden');
 
-  // Dark theme map styles
-  const darkMapStyle = [
-    { elementType: 'geometry', stylers: [{ color: '#0f172a' }] },
-    { elementType: 'labels.text.stroke', stylers: [{ color: '#0f172a' }] },
-    { elementType: 'labels.text.fill', stylers: [{ color: '#94a3b8' }] },
-    { featureType: 'road', elementType: 'geometry', stylers: [{ color: '#1e293b' }] },
-    { featureType: 'road', elementType: 'geometry.stroke', stylers: [{ color: '#334155' }] },
-    { featureType: 'road.highway', elementType: 'geometry', stylers: [{ color: '#263548' }] },
-    { featureType: 'water', elementType: 'geometry', stylers: [{ color: '#0c1929' }] },
-    { featureType: 'water', elementType: 'labels.text.fill', stylers: [{ color: '#3d5978' }] },
-    { featureType: 'poi', elementType: 'geometry', stylers: [{ color: '#162032' }] },
+  // Light theme map styles
+  const lightMapStyle = [
+    { elementType: 'geometry', stylers: [{ color: '#f8fafc' }] },
+    { elementType: 'labels.text.stroke', stylers: [{ color: '#ffffff' }] },
+    { elementType: 'labels.text.fill', stylers: [{ color: '#475569' }] },
+    { featureType: 'road', elementType: 'geometry', stylers: [{ color: '#ffffff' }] },
+    { featureType: 'road', elementType: 'geometry.stroke', stylers: [{ color: '#e2e8f0' }] },
+    { featureType: 'road.highway', elementType: 'geometry', stylers: [{ color: '#f1f5f9' }] },
+    { featureType: 'water', elementType: 'geometry', stylers: [{ color: '#cbd5e1' }] },
+    { featureType: 'water', elementType: 'labels.text.fill', stylers: [{ color: '#475569' }] },
+    { featureType: 'poi', elementType: 'geometry', stylers: [{ color: '#f1f5f9' }] },
     { featureType: 'poi', stylers: [{ visibility: 'off' }] },
     { featureType: 'transit', stylers: [{ visibility: 'off' }] },
-    { featureType: 'administrative', elementType: 'geometry', stylers: [{ color: '#334155' }] },
-    { featureType: 'administrative.country', elementType: 'labels.text.fill', stylers: [{ color: '#64748b' }] },
-    { featureType: 'administrative.locality', elementType: 'labels.text.fill', stylers: [{ color: '#64748b' }] },
+    { featureType: 'administrative', elementType: 'geometry', stylers: [{ color: '#e2e8f0' }] },
+    { featureType: 'administrative.country', elementType: 'labels.text.fill', stylers: [{ color: '#475569' }] },
+    { featureType: 'administrative.locality', elementType: 'labels.text.fill', stylers: [{ color: '#475569' }] },
   ];
 
   STATE.mapInstance = new google.maps.Map(mapEl, {
     center: { lat: 12.9352, lng: 77.6245 },
     zoom: 13,
-    styles: darkMapStyle,
+    styles: lightMapStyle,
     disableDefaultUI: false,
     zoomControl: true,
     streetViewControl: false,
@@ -1562,18 +1562,18 @@ function renderCategoryChart(categoryCount) {
       plugins: {
         legend: { display: false },
         tooltip: {
-          backgroundColor: '#1E293B',
-          borderColor: '#334155',
+          backgroundColor: '#FFFFFF',
+          borderColor: '#E2E8F0',
           borderWidth: 1,
-          titleColor: '#F1F5F9',
-          bodyColor: '#94A3B8',
+          titleColor: '#0F172A',
+          bodyColor: '#475569',
         }
       },
       scales: {
         y: {
           beginAtZero: true,
           ticks: { color: '#64748B', stepSize: 1 },
-          grid: { color: 'rgba(255,255,255,0.05)' }
+          grid: { color: 'rgba(15,23,42,0.06)' }
         },
         x: {
           ticks: { color: '#64748B', font: { size: 10 } },
