@@ -1701,7 +1701,6 @@ function renderLeaderboard(leaderboard) {
 
   list.innerHTML = html;
 }
-}
 
 // ============================================================
 // PROFILE
